@@ -6,46 +6,33 @@ import css from './phonebook.module.css';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
-const { Component } = require('react');
+const { useState, useEffect } = require('react');
 
 const KEY_LOCAL_St_CONTACTS = 'contacts';
 
-// model.id = nanoid();
+const PhoneBook = () => {
+  const [contacts, setContacts] = useState([]);
+  const [filter, setFilter] = useState('');
 
-class PhoneBook extends Component {
-  state = {
-    contacts: [
-      { id: 'id-1', name: 'Rosie Simpson', number: '459-12-56' },
-      { id: 'id-2', name: 'Hermione Kline', number: '443-89-12' },
-      { id: 'id-3', name: 'Eden Clements', number: '645-17-79' },
-      { id: 'id-4', name: 'Annie Copeland', number: '227-91-26' },
-    ],
-    filter: '',
-  };
-
-  componentDidMount() {
+  useEffect(() => {
     const contactsFromLocalSt = JSON.parse(
       localStorage.getItem(KEY_LOCAL_St_CONTACTS)
     );
-    if (contactsFromLocalSt) {
-      this.setState(prev => ({
-        contacts: contactsFromLocalSt,
-      }));
+
+    if (contactsFromLocalSt?.length > 0) {
+      setContacts([...contactsFromLocalSt]); ///////////////////////////////
     }
-  }
+  }, []);
 
-  componentDidUpdate(prevProps, prevState) {
-    const isContactsUpdate =
-      this.state.contacts.length !== prevState.contacts.length;
-    const contactsJson = JSON.stringify(this.state.contacts);
-
-    if (isContactsUpdate) {
+  useEffect(() => {
+    const contactsJson = JSON.stringify(contacts);
+    if (contacts) {
       localStorage.setItem(KEY_LOCAL_St_CONTACTS, contactsJson);
     }
-  }
+  }, [contacts]);
 
-  handleAddNewContact = value => {
-    const isNewContactNew = this.state.contacts.find(
+  const handleAddNewContact = value => {
+    const isNewContactNew = contacts.find(
       el => el.name.toLowerCase() === value.name.toLowerCase()
     );
     const notify = () =>
@@ -53,27 +40,23 @@ class PhoneBook extends Component {
         theme: 'dark',
       });
 
-    isNewContactNew
-      ? notify()
-      : this.setState(prev => ({ contacts: [...prev.contacts, value] }));
+    isNewContactNew ? notify() : setContacts(prev => [...prev, value]); ////////////////////////////
   };
 
-  handleFilterChenge = e => {
-    const { name, value } = e.target;
-    this.setState({ [name]: value });
+  const handleFilterChenge = e => {
+    const { value } = e.target;
+    setFilter(value);
   };
 
-  getFilteredContacts = () => {
-    const { contacts, filter } = this.state;
+  const getFilteredContacts = () => {
     return contacts.filter(contact =>
       contact.name.toLowerCase().includes(filter.toLowerCase())
     );
   };
 
-  hendleDeleteContact = id => {
-    const deleteContact = this.state.contacts.filter(
-      contact => contact.id === id
-    );
+  const hendleDeleteContact = id => {
+    const deleteContact = contacts.filter(contact => contact.id === id);
+
     const deletName = deleteContact[0].name;
 
     const notify = () =>
@@ -83,30 +66,23 @@ class PhoneBook extends Component {
 
     notify();
 
-    this.setState(prev => ({
-      contacts: prev.contacts.filter(contact => contact.id !== id),
-    }));
+    setContacts(prev => prev.filter(contact => contact.id !== id));
   };
 
-  render = () => {
-    return (
-      <div className={css.boockBox}>
-        <h1 className={css.boockTitle}>Phonebook</h1>
-        <ContactForm onAddContact={this.handleAddNewContact} />
+  return (
+    <div className={css.boockBox}>
+      <h1 className={css.boockTitle}>Phonebook</h1>
+      <ContactForm onAddContact={handleAddNewContact} />
 
-        <h2 className={css.boockTitle}>Contacts</h2>
-        <Filter
-          onChangeFilter={this.handleFilterChenge}
-          filterWord={this.state.filter}
-        />
-        <ContactList
-          contacts={this.getFilteredContacts()}
-          onDeleteContact={this.hendleDeleteContact}
-        />
-        <ToastContainer />
-      </div>
-    );
-  };
-}
+      <h2 className={css.boockTitle}>Contacts</h2>
+      <Filter onChangeFilter={handleFilterChenge} filterWord={filter} />
+      <ContactList
+        contacts={getFilteredContacts()}
+        onDeleteContact={hendleDeleteContact}
+      />
+      <ToastContainer />
+    </div>
+  );
+};
 
 export default PhoneBook;
